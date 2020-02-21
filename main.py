@@ -133,6 +133,10 @@ class Display():
                                         text='Sharpen')
         self.button_sharpen.grid(row=1, column=3)
 
+        self.button_sobel = tk.Button(self.root, command=self.sobel,
+                                      text='Sobel')
+        self.button_sobel.grid(row=0, column=4)
+
         self.entries = self.init_entries()
 
         self.main_mult = tk.Entry(self.root)
@@ -224,6 +228,16 @@ class Display():
         self.image = apply_conv(self.image, kernel)
         self.redraw()
 
+    def sobel(self):
+        self.image = np.expand_dims(np.mean(self.image, axis=2), axis=2)
+        k1 = Kernel(np.array([[1, 0, -1], [2, 0, -2], [1, 0, -1]]), 1.)
+        k2 = Kernel(np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]]), 1.)
+        Gx = apply_conv(self.image, k1)
+        Gy = apply_conv(self.image, k2)
+        G = np.sqrt(Gx*Gx + Gy*Gy)
+        self.image = np.clip(G, 0, 255)
+        self.redraw(grey=True)
+
     def update_kernel(self, kernel):
         w = kernel.weights
         coeff = kernel.coeff
@@ -283,8 +297,11 @@ class Display():
                                      self.slider_values[2])
         self.redraw()
 
-    def redraw(self):
-        self.a.imshow(self.image)
+    def redraw(self, grey=False):
+        if grey:
+            self.a.imshow(self.image, cmap='Greys')
+        else:
+            self.a.imshow(self.image)
         self.canvas.draw()
 
 
