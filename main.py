@@ -4,14 +4,10 @@ import os
 import torch
 import numpy as np
 import tkinter as tk
-import matplotlib
-matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
-from matplotlib import style
-from torchvision import transforms, utils
-from skimage import io, transform
+from skimage import io
 import torch.nn.functional as F
 
 
@@ -124,6 +120,10 @@ class Kernel():
         elif self.size == 2:
             w = np.zeros((5, 5))
             w[2:4, 2:4] = self.weights
+            return w
+        elif self.size == 1:
+            w = np.zeros((5, 5))
+            w[2, 2] = self.weights
             return w
 
     def return_weights(self):
@@ -247,6 +247,26 @@ class Display():
                                        text='Save image as')
         self.button_saveas.grid(row=11, column=3)
 
+        self.entry_x0 = tk.Entry(self.root)
+        self.entry_x0.grid(row=12, column=2)
+        self.entry_x0.insert(0, '0')
+
+        self.entry_x1 = tk.Entry(self.root)
+        self.entry_x1.grid(row=12, column=3)
+        self.entry_x1.insert(0, self.image.shape[1])
+
+        self.entry_y0 = tk.Entry(self.root)
+        self.entry_y0.grid(row=12, column=4)
+        self.entry_y0.insert(0, '0')
+
+        self.entry_y1 = tk.Entry(self.root)
+        self.entry_y1.grid(row=12, column=5)
+        self.entry_y1.insert(0, self.image.shape[0])
+
+        self.button_crop = tk.Button(self.root, command=self.crop,
+                                     text='Crop')
+        self.button_crop.grid(row=12, column=6)
+
         self.entry_saveas = tk.Entry(self.root)
         self.entry_saveas.grid(row=11, column=4)
 
@@ -281,7 +301,38 @@ class Display():
 
         self.root.mainloop()
 
+    def crop(self):
+        x0 = int(self.entry_x0.get())
+        x1 = int(self.entry_x1.get())
+        y0 = int(self.entry_y0.get())
+        y1 = int(self.entry_y1.get())
+        self.image = self.image[y0:y1, x0:x1]
+        new_width = x1-x0
+        new_height = y1-y0
+        self.entry_x0.delete(0, 'end')
+        self.entry_x0.insert(0, '0')
+        self.entry_x1.delete(0, 'end')
+        self.entry_x1.insert(0, new_width)
+        self.entry_y0.delete(0, 'end')
+        self.entry_y0.insert(0, '0')
+        self.entry_y1.delete(0, 'end')
+        self.entry_y1.insert(0, new_height)
+        self.redraw(self.grey)
+
+    def reset_crop(self):
+        self.entry_x0.delete(0, 'end')
+        self.entry_x0.insert(0, '0')
+        self.entry_x1.delete(0, 'end')
+        self.entry_x1.insert(0, self.image.shape[1])
+        self.entry_y0.delete(0, 'end')
+        self.entry_y0.insert(0, '0')
+        self.entry_y1.delete(0, 'end')
+        self.entry_y1.insert(0, self.image.shape[0])
+
     def swap(self, order):
+        if self.grey:
+            print("Can't swap channels on a greyscale image")
+            return
         if order == '021':
             col1 = self.image[:, :, 1].copy()
             col2 = self.image[:, :, 2].copy()
@@ -373,6 +424,7 @@ class Display():
             self.image = load_image(entry)
             self.filename = entry
             self.grey = False
+            self.reset_crop()
             self.redraw()
         except ValueError as e:
             print(e)
@@ -478,6 +530,7 @@ class Display():
         return list_entries
 
     def reset_image(self):
+        self.reset_crop()
         self.image = load_image(self.filename)
         self.slider_red.set(1)
         self.slider_values[0] = 1.
