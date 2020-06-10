@@ -525,7 +525,7 @@ class Display():
                 else:
                     entry.insert(0, '0')
                 list_entries.append(entry)
-                entry.grid(row=3+i, column=2+j)
+                entry.grid(row=3 + i, column=2 + j)
 
         return list_entries
 
